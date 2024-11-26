@@ -1,0 +1,53 @@
+{
+    "id": "generate_image",
+    "code": "async function generate_image(params, context) {\n  // Initial request to create image\n  const createResponse = await fetch(\"https://api.bfl.ml/v1/flux-pro-1.1\", {\n    method: \"POST\",\n    headers: {\n      \"Content-Type\": \"application/json\",\n      \"X-Key\": context.apiKey\n    },\n    body: JSON.stringify({\n      prompt: params.prompt,\n      width: params.width || 1024,\n      height: params.height || 768,\n      prompt_upsampling: false,\n      seed: params.seed || 42,\n      safety_tolerance: 2,\n      output_format: \"jpeg\"\n    })\n  });\n\n  if (!createResponse.ok) {\n    throw new Error(\"Failed to initiate image generation\");\n  }\n\n  const { id } = await createResponse.json();\n\n  // Poll for results\n  let result;\n  for (let i = 0; i < 30; i++) {\n    // Maximum 30 attempts\n    const checkResponse = await fetch(\n      `https://api.bfl.ml/v1/get_result?id=${id}`\n    );\n    if (!checkResponse.ok) {\n      throw new Error(\"Failed to check generation status\");\n    }\n\n    result = await checkResponse.json();\n    if (result.status !== \"Pending\") {\n      break;\n    }\n\n    // Wait 2 seconds before next poll\n    await new Promise((resolve) => setTimeout(resolve, 2000));\n  }\n\n  if (!result || result.status !== \"Ready\") {\n    throw new Error(\"Something went wrong: \" + JSON.stringify(result));\n  }\n\n  return `![${params.prompt}](${result.result.sample})`\n}",
+    "uuid": "6af08399-1902-40e1-864f-d8767d14b8e5",
+    "emoji": "🧩",
+    "title": "Flux Image Generation",
+    "iconURL": "https://blackforestlabs.ai/wp-content/uploads/2024/07/logo-with-text_more-2048x1940.png",
+    "openaiSpec": {
+        "name": "generate_image",
+        "parameters": {
+            "type": "object",
+            "required": [
+                "prompt"
+            ],
+            "properties": {
+                "seed": {
+                    "type": "integer",
+                    "default": 42,
+                    "description": "Random seed for reproducibility (optional)"
+                },
+                "width": {
+                    "type": "integer",
+                    "default": 1024,
+                    "description": "Width of the output image (default: 1024)"
+                },
+                "height": {
+                    "type": "integer",
+                    "default": 768,
+                    "description": "Height of the output image (default: 768)"
+                },
+                "prompt": {
+                    "type": "string",
+                    "description": "The prompt describing the image you want to generate"
+                }
+            }
+        },
+        "description": "Generate an image using Grok Image Generation"
+    },
+    "outputType": "render_markdown",
+    "oauthConfig": null,
+    "userSettings": [
+        {
+            "name": "apiKey",
+            "type": "password",
+            "label": "API Key",
+            "required": true,
+            "description": "API Key. Create one at https://blackforestlabs.ai/"
+        }
+    ],
+    "overviewMarkdown": "## Flux Image Generation Powered by Black Forest Labs\n\nUnlock the power of high-quality image generation with Flux Image Generation, developed in partnership with Black Forest Labs. This cutting-edge tool harnesses the latest advancements in AI to produce stunning visuals quickly and efficiently. Built on the Flux1.1 Pro model, our image generator delivers unique and captivating images tailored to your needs.\n\nFeatures include:\n\n- **Rapid Processing**: Experience quick turnaround times without compromising on quality.\n- **High-Quality Outputs**: Generate images that meet the highest standards of clarity and detail.\n- **Ease of Integration**: Our API allows developers to easily incorporate Grok capabilities into their own applications and services.\n\nWhether you’re a content creator, marketer, or developer, Flux Image Generation equips you with the tools necessary to bring your creative visions to life. Join the forefront of artificial intelligence in imaging and transform your ideas into reality!",
+    "authenticationType": "AUTH_TYPE_NONE",
+    "implementationType": "javascript"
+}
